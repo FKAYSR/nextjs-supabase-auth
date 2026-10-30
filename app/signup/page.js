@@ -1,5 +1,11 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+
+export const metadata = {
+  title: "Sign up",
+  description: "Sign up here",
+};
 
 async function signUp(formData) {
   "use server";
@@ -8,17 +14,18 @@ async function signUp(formData) {
   const password = formData.get("password");
 
   const supabase = await createClient();
-  await supabase.auth.signUp({ email, password });
+  const { error } = await supabase.auth.signUp({ email, password });
+
+  if (error) {
+    redirect("/signup?error=true");
+  }
 
   redirect("/");
 }
 
-export const metadata = {
-  title: "Sign up",
-  description: "Sign up here",
-};
-
-export default function Home() {
+export default async function Signup({ searchParams }) {
+     const { error } = await searchParams;
+     
   return (
     <main>
       <section>
@@ -29,7 +36,13 @@ export default function Home() {
         </p>
       </section>
 
-      <form className="auth-form">
+      {error && (
+        <p className="form-error" role="alert">
+          Could not sign up. Maybe the email is already in use.
+        </p>
+      )}
+
+      <form className="auth-form" action={signUp}>
         <label htmlFor="email">Email</label>
         <input
           id="email"
@@ -53,6 +66,9 @@ export default function Home() {
 
         <button type="submit">Sign up</button>
       </form>
+      <p>
+        Already have an account? <Link href="/login">Log in</Link>
+      </p>
     </main>
   );
 }
